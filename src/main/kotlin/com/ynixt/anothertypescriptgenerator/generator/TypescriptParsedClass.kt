@@ -6,6 +6,7 @@ import com.ynixt.anothertypescriptgenerator.CustomType
 import com.ynixt.anothertypescriptgenerator.GenericObjectTypescriptType
 import com.ynixt.anothertypescriptgenerator.SubclassKotlinType
 import com.ynixt.anothertypescriptgenerator.TypescriptType
+import com.ynixt.anothertypescriptgenerator.Utils.lineSeparator
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
@@ -50,7 +51,7 @@ class TypescriptParsedClass(
             sb.appendLine("export type ${kotlinParsedClass.className} = $optionsCode;")
         } else {
             if (importsBlock.isNotEmpty()) {
-                sb.appendLine(importsBlock.joinToString("\n"))
+                sb.appendLine(importsBlock.joinToString(lineSeparator))
                 sb.appendLine()
             }
 
@@ -58,7 +59,7 @@ class TypescriptParsedClass(
 
             if (!propertiesBlock.isNullOrEmpty()) {
                 sb.appendLine()
-                sb.appendLine(propertiesBlock.joinToString("\n") { "  $it" })
+                sb.appendLine(propertiesBlock.joinToString(lineSeparator) { "  $it" })
             }
 
             sb.appendLine("}")

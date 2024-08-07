@@ -9,6 +9,7 @@ import com.ynixt.anothertypescriptgenerator.KotlinType
 import com.ynixt.anothertypescriptgenerator.MapDateOption
 import com.ynixt.anothertypescriptgenerator.SubclassKotlinType
 import com.ynixt.anothertypescriptgenerator.TypescriptType
+import com.ynixt.anothertypescriptgenerator.Utils.lineSeparator
 import java.io.File
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -53,14 +54,14 @@ class ClassesConverter(
             }
 
         groupFilesByDirectory(filesCreated).entries.parallelStream().forEach {
-            File(it.key, "index.ts").writeText(it.value.joinToString(separator = "\n") {
+            File(it.key, "index.ts").writeText(it.value.joinToString(separator = lineSeparator) {
                 "export * from './${
                     it.replace(
                         ".ts",
                         ""
                     )
                 }'"
-            } + "\n")
+            } + lineSeparator)
         }
     }
 
