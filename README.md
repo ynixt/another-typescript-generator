@@ -60,7 +60,7 @@ plugins {
 | String                                                        | string               |                                                                    |
 | Byte, Short, Int, Long, Float, Double, BigDecimal, BigInteger | number               |                                                                    |
 | Boolean                                                       | boolean              |                                                                    |
-| Collection<T>                                                 | Array<T>             |                                                                    |
+| Collection<T>                                                 | Array\<T>            |                                                                    |
 | Map<K, T>                                                     | { [key: string]: T } |                                                                    |
 | any other type                                                | any                  |                                                                    |
 
