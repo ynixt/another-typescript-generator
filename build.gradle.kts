@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm") version "2.0.0"
     `java-gradle-plugin`
     `maven-publish`
+    id("com.gradle.plugin-publish") version "1.2.1"
 }
 
 group = "com.ynixt"
@@ -28,10 +29,16 @@ kotlin {
 }
 
 gradlePlugin {
+    website.set("https://github.com/ynixt/another-typescript-generator")
+    vcsUrl.set("https://github.com/ynixt/another-typescript-generator")
+
     plugins {
         create("anotherTypescriptGeneratorPlugin") {
             id = "com.ynixt.another-typescript-generator"
             implementationClass = "com.ynixt.anothertypescriptgenerator.AnotherTypescriptGeneratorPlugin"
+            displayName = "Another Typescript Generator"
+            description = "Another Typescript Generator is a Gradle plugin that generates Typescript interfaces from Kotlin/Java classes. Each class generates a new file to prevent collision."
+            tags.set(listOf("kotlin", "typescript", "generator"))
         }
     }
 }
