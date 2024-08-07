@@ -44,19 +44,25 @@ class TypescriptParsedClass(
         sb.appendLine("/* tslint-disable */")
         sb.appendLine("")
 
-        if (importsBlock.isNotEmpty()) {
-            sb.appendLine(importsBlock.joinToString("\n"))
-            sb.appendLine()
+        if (kotlinParsedClass.originalClass.java.isEnum) {
+            val options = kotlinParsedClass.originalClass.java.enumConstants
+            val optionsCode = options.joinToString(" | "){"'$it'"}
+            sb.appendLine("export type ${kotlinParsedClass.className} = $optionsCode;")
+        } else {
+            if (importsBlock.isNotEmpty()) {
+                sb.appendLine(importsBlock.joinToString("\n"))
+                sb.appendLine()
+            }
+
+            sb.append("export interface $classBlock {")
+
+            if (!propertiesBlock.isNullOrEmpty()) {
+                sb.appendLine()
+                sb.appendLine(propertiesBlock.joinToString("\n") { "  $it" })
+            }
+
+            sb.appendLine("}")
         }
-
-        sb.append("export interface $classBlock {")
-
-        if (!propertiesBlock.isNullOrEmpty()) {
-            sb.appendLine()
-            sb.appendLine(propertiesBlock.joinToString("\n") { "  $it" })
-        }
-
-        sb.appendLine("}")
 
         return sb.toString()
     }
@@ -142,7 +148,7 @@ class TypescriptParsedClass(
 
         if (classifier.parsedClass != null) {
 
-            if(checkCustomTypes) {
+            if (checkCustomTypes) {
                 if (customTypesAbsolute.containsKey(classifier.parsedClass.originalClass)) {
                     customType = customTypesAbsolute[classifier.parsedClass.originalClass]!!.typescript
                 } else {

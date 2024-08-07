@@ -134,7 +134,7 @@ class KotlinParsedClass(
     ): ParsedClassifier? {
         return when (classifier) {
             is KClass<*> -> {
-                if (classifier.simpleName == "Any" || classifier.simpleName == "Serializable") {
+                if (classifier.simpleName == "Any" || classifier.simpleName == "Serializable" || classifier.simpleName == "Enum") {
                     null
                 } else {
                     if (!alreadyScannedClasses.containsKey(classifier)) {
