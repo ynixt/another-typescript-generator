@@ -1,4 +1,4 @@
-package com.ynixt.anothertypescriptgenerator
+package io.github.ynixt.anothertypescriptgenerator
 
 import io.github.classgraph.ClassGraph
 import java.net.URL

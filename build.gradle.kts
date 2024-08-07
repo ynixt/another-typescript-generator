@@ -5,8 +5,8 @@ plugins {
     id("com.gradle.plugin-publish") version "1.2.1"
 }
 
-group = "com.ynixt"
-version = "1.0.1"
+group = "io.github.ynixt"
+version = "1.0.2"
 
 repositories {
     mavenCentral()
@@ -34,8 +34,8 @@ gradlePlugin {
 
     plugins {
         create("anotherTypescriptGeneratorPlugin") {
-            id = "com.ynixt.another-typescript-generator"
-            implementationClass = "com.ynixt.anothertypescriptgenerator.AnotherTypescriptGeneratorPlugin"
+            id = "io.github.ynixt.another-typescript-generator"
+            implementationClass = "io.github.ynixt.anothertypescriptgenerator.AnotherTypescriptGeneratorPlugin"
             displayName = "Another Typescript Generator"
             description = "Another Typescript Generator is a Gradle plugin that generates Typescript interfaces from Kotlin/Java classes. Each class generates a new file to prevent collision."
             tags.set(listOf("kotlin", "typescript", "generator"))

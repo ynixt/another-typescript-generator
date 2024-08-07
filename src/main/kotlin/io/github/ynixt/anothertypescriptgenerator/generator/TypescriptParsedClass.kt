@@ -1,12 +1,12 @@
-package com.ynixt.anothertypescriptgenerator.generator
+package io.github.ynixt.anothertypescriptgenerator.generator
 
-import com.ynixt.anothertypescriptgenerator.AbsoluteArrayTypescriptType
-import com.ynixt.anothertypescriptgenerator.AbsoluteTypescriptType
-import com.ynixt.anothertypescriptgenerator.CustomType
-import com.ynixt.anothertypescriptgenerator.GenericObjectTypescriptType
-import com.ynixt.anothertypescriptgenerator.SubclassKotlinType
-import com.ynixt.anothertypescriptgenerator.TypescriptType
-import com.ynixt.anothertypescriptgenerator.Utils.lineSeparator
+import io.github.ynixt.anothertypescriptgenerator.AbsoluteArrayTypescriptType
+import io.github.ynixt.anothertypescriptgenerator.AbsoluteTypescriptType
+import io.github.ynixt.anothertypescriptgenerator.CustomType
+import io.github.ynixt.anothertypescriptgenerator.GenericObjectTypescriptType
+import io.github.ynixt.anothertypescriptgenerator.SubclassKotlinType
+import io.github.ynixt.anothertypescriptgenerator.TypescriptType
+import io.github.ynixt.anothertypescriptgenerator.Utils.lineSeparator
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 

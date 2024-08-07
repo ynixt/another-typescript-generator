@@ -44,11 +44,11 @@ export interface Company extends DatabaseEntity {
 
 ## Installing
 
-Add `id("com.ynixt.another-typescript-generator") version "1.0.1"` at plugins section
+Add `id("io.github.ynixt.another-typescript-generator") version "1.0.2"` at plugins section
 
 ```kotlin
 plugins {
-    id("com.ynixt.another-typescript-generator") version "1.0.1"
+    id("io.github.ynixt.another-typescript-generator") version "1.0.2"
 }
 ```
 
@@ -75,7 +75,7 @@ tasks.named<GenerateTypescriptInterfacesTask>("generateTypescriptInterfaces") {
     outputPath = "./src/models/generated"
     classPackages =
         listOf(
-            "com.ynixt.example",
+            "io.github.ynixt.example",
         )
 }
 ```
@@ -102,7 +102,7 @@ Note: A class not listed here can be read if a listed class has a reference for 
 
 ```kotlin
 classPackages = listOf(
-    "com.ynixt.example",
+    "io.github.ynixt.example",
 )
 ```
 
@@ -117,7 +117,7 @@ param
 
 ```kotlin
 excludeClassPackages = listOf(
-    "com.ynixt.example",
+    "io.github.ynixt.example",
 )
 ```
 
@@ -129,7 +129,7 @@ A list of classes that will not be read, no matter what. If there is any referen
 
 ```kotlin
 ignoredClasses = listOf(
-    "com.ynixt.example.Book",
+    "io.github.ynixt.example.Book",
 )
 ```
 
@@ -141,7 +141,7 @@ A map of fields of classes that should be ignored.
 
 ```kotlin
 ignoredClasses = mutableMapOf(
-    "com.ynixt.example.Person" to setOf("name", "age")
+    "io.github.ynixt.example.Person" to setOf("name", "age")
 )
 ``` 
 
@@ -176,7 +176,7 @@ Add or replace the mapping between Typescript and Kotlin.
         typescript = AbsoluteTypescriptType(name = "any")
     ),
     CustomType(
-        kotlin = AbsoluteKotlinTypeString("com.ynixt.entities.Book"),
+        kotlin = AbsoluteKotlinTypeString("io.github.ynixt.entities.Book"),
         typescript = AbsoluteTypescriptType(name = "string", ignoreGenerics = true)
     )
 )

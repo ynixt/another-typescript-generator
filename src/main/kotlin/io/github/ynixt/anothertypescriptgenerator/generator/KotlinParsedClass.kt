@@ -1,6 +1,6 @@
-package com.ynixt.anothertypescriptgenerator.generator
+package io.github.ynixt.anothertypescriptgenerator.generator
 
-import com.ynixt.anothertypescriptgenerator.CustomType
+import io.github.ynixt.anothertypescriptgenerator.CustomType
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier

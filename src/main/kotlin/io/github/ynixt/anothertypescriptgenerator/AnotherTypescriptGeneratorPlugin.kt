@@ -1,4 +1,4 @@
-package com.ynixt.anothertypescriptgenerator
+package io.github.ynixt.anothertypescriptgenerator
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project

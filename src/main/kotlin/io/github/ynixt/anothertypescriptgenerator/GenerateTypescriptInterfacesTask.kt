@@ -1,6 +1,6 @@
-package com.ynixt.anothertypescriptgenerator
+package io.github.ynixt.anothertypescriptgenerator
 
-import com.ynixt.anothertypescriptgenerator.generator.ClassesConverter
+import io.github.ynixt.anothertypescriptgenerator.generator.ClassesConverter
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
