@@ -47,7 +47,7 @@ class TypescriptParsedClass(
 
         if (kotlinParsedClass.originalClass.java.isEnum) {
             val options = kotlinParsedClass.originalClass.java.enumConstants
-            val optionsCode = options.joinToString(" | "){"'$it'"}
+            val optionsCode = options.joinToString(" | ") { "'$it'" }
             sb.appendLine("export type ${kotlinParsedClass.className} = $optionsCode;")
         } else {
             if (importsBlock.isNotEmpty()) {
@@ -154,7 +154,10 @@ class TypescriptParsedClass(
                     customType = customTypesAbsolute[classifier.parsedClass.originalClass]!!.typescript
                 } else {
                     val newOriginalClass = customTypesSubclass.find { typeSubclass ->
-                        if ((classifier.parsedClass.originalClass).isSubclassOf((typeSubclass.kotlin as SubclassKotlinType).kClass)) {
+                        if (
+                            (classifier.parsedClass.originalClass).isSubclassOf((typeSubclass.kotlin as SubclassKotlinType).kClass) ||
+                            classifier.parsedClass.originalClass.qualifiedName == typeSubclass.kotlin.kClass.qualifiedName
+                        ) {
                             return@find true
                         }
                         false

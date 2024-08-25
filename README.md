@@ -44,11 +44,11 @@ export interface Company extends DatabaseEntity {
 
 ## Installing
 
-Add `id("io.github.ynixt.another-typescript-generator") version "1.0.2"` at plugins section
+Add `id("io.github.ynixt.another-typescript-generator") version "1.0.3"` at plugins section
 
 ```kotlin
 plugins {
-    id("io.github.ynixt.another-typescript-generator") version "1.0.2"
+    id("io.github.ynixt.another-typescript-generator") version "1.0.3"
 }
 ```
 

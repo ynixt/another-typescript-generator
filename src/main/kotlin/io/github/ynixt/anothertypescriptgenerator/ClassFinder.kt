@@ -13,16 +13,29 @@ class ClassFinder(
         val scanResult = ClassGraph()
             .overrideClasspath(classPathUrls)
             .verbose()
-            .enableAllInfo()
+            .enableClassInfo()
+            .acceptClasses(*classPackages.toTypedArray())
             .acceptPackages(*classPackages.toTypedArray())
             .rejectPackages(*excludeClassPackages.toTypedArray())
             .ignoreClassVisibility()
             .scan()
 
-        val allClasses = scanResult.allClasses.filter { !it.name.endsWith("\$Companion") }
+        val allClasses = scanResult.allClasses.filter { !it.name.endsWith("\$Companion") && !it.isSynthetic }
 
-        return allClasses.map { classInfo ->
-            classInfo.loadClass().kotlin
+        return allClasses.mapNotNull { classInfo ->
+            try {
+                val kClass = classInfo.loadClass().kotlin
+
+                if (kClass.qualifiedName != null) {
+                    kClass
+                } else {
+                    println("$kClass doesn't have a qualified name.")
+                    null
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                null
+            }
         }
     }
 }
