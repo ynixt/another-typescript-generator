@@ -134,12 +134,17 @@ class KotlinParsedClass(
     ): ParsedClassifier? {
         return when (classifier) {
             is KClass<*> -> {
-                if (classifier.simpleName == "Any" || classifier.simpleName == "Serializable" || classifier.simpleName == "Enum") {
+                if (classifier.simpleName == "Serializable" || classifier.simpleName == "Enum") {
                     null
                 } else {
                     if (!alreadyScannedClasses.containsKey(classifier)) {
                         val newClass =
-                            KotlinParsedClass(classifier, newClassesToParse != null, ignoredClasses, ignoredFieldsByClass)
+                            KotlinParsedClass(
+                                classifier,
+                                newClassesToParse != null && classifier.simpleName != "Any",
+                                ignoredClasses,
+                                ignoredFieldsByClass
+                            )
                         alreadyScannedClasses[classifier] = newClass
 
                         newClassesToParse?.add(newClass)

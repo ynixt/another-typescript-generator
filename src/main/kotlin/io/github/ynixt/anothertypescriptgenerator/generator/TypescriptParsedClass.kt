@@ -80,7 +80,7 @@ class TypescriptParsedClass(
         }
 
         properties?.map { it.returnType }?.forEach {
-            imports.addAll(getImportsOfParsedType(it))
+            imports.addAll(getImportsOfParsedType(it, true))
         }
 
         imports.sort()
@@ -99,9 +99,11 @@ class TypescriptParsedClass(
             sb.append(">")
         }
 
-        if (!supertypes.isNullOrEmpty()) {
+        val superTypesWithoutAny = supertypes?.filter { it.classifier.name != "Any" }
+
+        if (!superTypesWithoutAny.isNullOrEmpty()) {
             sb.append(" extends ")
-            sb.append(supertypes.joinToString(", ") { it.asCode() })
+            sb.append(superTypesWithoutAny.joinToString(", ") { it.asCode() })
         }
 
         return sb.toString()
@@ -148,7 +150,6 @@ class TypescriptParsedClass(
         var customType: TypescriptType? = null
 
         if (classifier.parsedClass != null) {
-
             if (checkCustomTypes) {
                 if (customTypesAbsolute.containsKey(classifier.parsedClass.originalClass)) {
                     customType = customTypesAbsolute[classifier.parsedClass.originalClass]!!.typescript
@@ -198,14 +199,18 @@ class TypescriptParsedClass(
         return "import { ${kotlinParsedClass.className} } from '$fileName';"
     }
 
-    private fun getImportsOfParsedType(parsedType: TypescriptParsedType): List<String> {
+    private fun getImportsOfParsedType(parsedType: TypescriptParsedType, onlyOneArgument: Boolean = false): List<String> {
         val imports = mutableListOf<String>()
 
 
         imports.addAll(importTypescriptClassifier(parsedType.classifier))
 
         if (parsedType.argumentsTypes != null) {
-            imports.addAll(parsedType.argumentsTypes.map { getImportsOfParsedType(it) }.flatten())
+            if (onlyOneArgument && parsedType.argumentsTypes.size == 2) {
+                imports.addAll(getImportsOfParsedType(parsedType.argumentsTypes[1]))
+            } else {
+                imports.addAll(parsedType.argumentsTypes.map { getImportsOfParsedType(it) }.flatten())
+            }
         }
 
         return imports
@@ -264,6 +269,9 @@ class TypescriptParsedProperty(
         val sb = StringBuilder()
 
         sb.append(name)
+        if (returnType.nullable) {
+            sb.append("?")
+        }
         sb.append(": ")
         sb.append(returnType.asCode())
         sb.append(";")
@@ -284,7 +292,7 @@ class TypescriptParsedType(
     fun asCode(): String {
         val sb = StringBuilder()
 
-        if (classifier.customType != null && classifier.customType is GenericObjectTypescriptType && argumentsTypes != null && argumentsTypes.size == 2) {
+        if (argumentsTypes != null && argumentsTypes.size == 2) {
             val returnType = argumentsTypes[1].asCode()
             sb.append("{ [key: string]: $returnType }")
         } else {
