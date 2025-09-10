@@ -18,6 +18,8 @@ class AnotherTypescriptGeneratorPlugin : Plugin<Project> {
             deleteBefore.set(extension.deleteBefore)
             ignoredClasses.set(extension.ignoreClasses)
             ignoredFieldsByClass.set(extension.ignoredFieldsByClass)
+            generateEnumOptions.set(extension.generateEnumOptions)
+            generateEnumObject.set(extension.generateEnumObject)
         }
     }
 }
@@ -33,4 +35,6 @@ open class TypescriptGeneratorExtension {
     var deleteBefore: Boolean = true
     var ignoreClasses: Set<String> = setOf()
     var ignoredFieldsByClass: Map<String, Set<String>> = mutableMapOf()
+    var generateEnumOptions: Boolean = true
+    var generateEnumObject: Boolean = false
 }

@@ -15,22 +15,27 @@ class TypescriptParsedClass(
     private val customTypes: List<CustomType>,
     private val customTypesAbsolute: Map<KClass<*>, CustomType>,
     private val customTypesSubclass: List<CustomType>,
+    private val generateEnumOptions: Boolean,
+    private val generateEnumObject: Boolean,
 ) {
     val fileName = kotlinParsedClass.getFileName()
     val packagePath = kotlinParsedClass.getPackagePath()
 
-    private val typeParameters = kotlinParsedClass.typeParameters?.map {
-        TypescriptParsedTypeParameter(
-            name = it.name,
-            bounds = it.bounds?.map { bound ->
-                getClassifierForProperty(bound, false)
-            }
-        )
-    }
+    private val typeParameters =
+        kotlinParsedClass.typeParameters?.map {
+            TypescriptParsedTypeParameter(
+                name = it.name,
+                bounds =
+                    it.bounds?.map { bound ->
+                        getClassifierForProperty(bound, false)
+                    },
+            )
+        }
 
-    private val supertypes = kotlinParsedClass.supertypes?.map {
-        getParsedTypeForProperty(it, false)
-    }
+    private val supertypes =
+        kotlinParsedClass.supertypes?.map {
+            getParsedTypeForProperty(it, false)
+        }
 
     private val properties = getProperties()
 
@@ -46,9 +51,30 @@ class TypescriptParsedClass(
         sb.appendLine("")
 
         if (kotlinParsedClass.originalClass.java.isEnum) {
+            val enumName = kotlinParsedClass.className
+
             val options = kotlinParsedClass.originalClass.java.enumConstants
             val optionsCode = options.joinToString(" | ") { "'$it'" }
-            sb.appendLine("export type ${kotlinParsedClass.className} = $optionsCode;")
+            sb.appendLine("export type $enumName = $optionsCode;")
+
+            if (generateEnumOptions) {
+                val optionsForEnumOptions = options.joinToString(", ") { "'$it'" }
+
+                sb.appendLine()
+                sb.append("export const ${enumName}__Options: $enumName[] = ")
+                sb.appendLine("[$optionsForEnumOptions];")
+            }
+
+            if (generateEnumObject) {
+                sb.appendLine()
+                sb.appendLine("export const ${enumName}__Obj: { [K in $enumName]: ${kotlinParsedClass.className} } = {")
+
+                options.forEach {
+                    sb.appendLine("  '$it': '$it',")
+                }
+
+                sb.appendLine("};")
+            }
         } else {
             if (importsBlock.isNotEmpty()) {
                 sb.appendLine(importsBlock.joinToString(lineSeparator))
@@ -95,7 +121,7 @@ class TypescriptParsedClass(
 
         if (!typeParameters.isNullOrEmpty()) {
             sb.append("<")
-            sb.append(typeParameters.joinToString(", ") { it.asCode() })//
+            sb.append(typeParameters.joinToString(", ") { it.asCode() }) //
             sb.append(">")
         }
 
@@ -109,9 +135,7 @@ class TypescriptParsedClass(
         return sb.toString()
     }
 
-    private fun generatePropertiesBlock(): List<String>? {
-        return properties?.map { it.asCode() }
-    }
+    private fun generatePropertiesBlock(): List<String>? = properties?.map { it.asCode() }
 
     private fun importTypescriptClassifier(classifier: TypescriptParsedClassifier): List<String> {
         val list = mutableListOf<String>()
@@ -135,16 +159,18 @@ class TypescriptParsedClass(
         return list
     }
 
-    private fun getProperties(): List<TypescriptParsedProperty>? {
-        return kotlinParsedClass.properties?.map {
+    private fun getProperties(): List<TypescriptParsedProperty>? =
+        kotlinParsedClass.properties?.map {
             TypescriptParsedProperty(
                 name = it.name,
-                returnType = getParsedTypeForProperty(it.returnType)
+                returnType = getParsedTypeForProperty(it.returnType),
             )
         }
-    }
 
-    private fun getClassifierForProperty(classifier: ParsedClassifier, checkCustomTypes: Boolean = true): TypescriptParsedClassifier {
+    private fun getClassifierForProperty(
+        classifier: ParsedClassifier,
+        checkCustomTypes: Boolean = true,
+    ): TypescriptParsedClassifier {
         var childClassifier: TypescriptParsedClassifier? = null
         val parsedClass: KotlinParsedClass? = classifier.parsedClass
         var customType: TypescriptType? = null
@@ -154,15 +180,16 @@ class TypescriptParsedClass(
                 if (customTypesAbsolute.containsKey(classifier.parsedClass.originalClass)) {
                     customType = customTypesAbsolute[classifier.parsedClass.originalClass]!!.typescript
                 } else {
-                    val newOriginalClass = customTypesSubclass.find { typeSubclass ->
-                        if (
-                            (classifier.parsedClass.originalClass).isSubclassOf((typeSubclass.kotlin as SubclassKotlinType).kClass) ||
-                            classifier.parsedClass.originalClass.qualifiedName == typeSubclass.kotlin.kClass.qualifiedName
-                        ) {
-                            return@find true
+                    val newOriginalClass =
+                        customTypesSubclass.find { typeSubclass ->
+                            if (
+                                (classifier.parsedClass.originalClass).isSubclassOf((typeSubclass.kotlin as SubclassKotlinType).kClass) ||
+                                classifier.parsedClass.originalClass.qualifiedName == typeSubclass.kotlin.kClass.qualifiedName
+                            ) {
+                                return@find true
+                            }
+                            false
                         }
-                        false
-                    }
 
                     if (newOriginalClass != null) {
                         customType = newOriginalClass.typescript
@@ -179,19 +206,22 @@ class TypescriptParsedClass(
             name = classifier.name,
             parsedClass = parsedClass,
             parsedClassifier = childClassifier,
-            customType = customType
+            customType = customType,
         )
     }
 
-    private fun getParsedTypeForProperty(parsedType: ParsedType, checkCustomTypes: Boolean = true): TypescriptParsedType {
-        return TypescriptParsedType(
+    private fun getParsedTypeForProperty(
+        parsedType: ParsedType,
+        checkCustomTypes: Boolean = true,
+    ): TypescriptParsedType =
+        TypescriptParsedType(
             nullable = parsedType.nullable,
             classifier = getClassifierForProperty(parsedType.classifier, checkCustomTypes),
-            argumentsTypes = parsedType.argumentsTypes?.map { argumentType ->
-                getParsedTypeForProperty(argumentType, checkCustomTypes)
-            }
+            argumentsTypes =
+                parsedType.argumentsTypes?.map { argumentType ->
+                    getParsedTypeForProperty(argumentType, checkCustomTypes)
+                },
         )
-    }
 
     private fun importClass(kotlinParsedClass: KotlinParsedClass): String {
         val fileName = getRelativePath(this.packagePath, kotlinParsedClass.getFileName())
@@ -199,9 +229,11 @@ class TypescriptParsedClass(
         return "import { ${kotlinParsedClass.className} } from '$fileName';"
     }
 
-    private fun getImportsOfParsedType(parsedType: TypescriptParsedType, onlyOneArgument: Boolean = false): List<String> {
+    private fun getImportsOfParsedType(
+        parsedType: TypescriptParsedType,
+        onlyOneArgument: Boolean = false,
+    ): List<String> {
         val imports = mutableListOf<String>()
-
 
         imports.addAll(importTypescriptClassifier(parsedType.classifier))
 
@@ -216,13 +248,17 @@ class TypescriptParsedClass(
         return imports
     }
 
-    private fun getRelativePath(currentPackage: String, classPathThatWillBeImported: String): String {
+    private fun getRelativePath(
+        currentPackage: String,
+        classPathThatWillBeImported: String,
+    ): String {
         val currentPackageParts = currentPackage.trim('/').split('/')
         val classPathParts = classPathThatWillBeImported.trim('/').split('/')
 
         // Find common prefix length
         var commonLength = 0
-        while (commonLength < currentPackageParts.size && commonLength < classPathParts.size &&
+        while (commonLength < currentPackageParts.size &&
+            commonLength < classPathParts.size &&
             currentPackageParts[commonLength] == classPathParts[commonLength]
         ) {
             commonLength++
@@ -242,11 +278,11 @@ class TypescriptParsedClass(
 
 class TypescriptParsedTypeParameter(
     name: String,
-    override val bounds: List<TypescriptParsedClassifier>?
+    override val bounds: List<TypescriptParsedClassifier>?,
 ) : ParsedTypeParameter(
-    name,
-    bounds
-) {
+        name,
+        bounds,
+    ) {
     fun asCode(): String {
         val sb = StringBuilder()
 
@@ -263,7 +299,7 @@ class TypescriptParsedTypeParameter(
 
 class TypescriptParsedProperty(
     name: String,
-    override val returnType: TypescriptParsedType
+    override val returnType: TypescriptParsedType,
 ) : ParsedProperty(name, returnType) {
     fun asCode(): String {
         val sb = StringBuilder()
@@ -283,12 +319,12 @@ class TypescriptParsedProperty(
 class TypescriptParsedType(
     nullable: Boolean,
     override val classifier: TypescriptParsedClassifier,
-    override val argumentsTypes: List<TypescriptParsedType>? = null
+    override val argumentsTypes: List<TypescriptParsedType>? = null,
 ) : ParsedType(
-    nullable,
-    classifier,
-    argumentsTypes
-) {
+        nullable,
+        classifier,
+        argumentsTypes,
+    ) {
     fun asCode(): String {
         val sb = StringBuilder()
 
@@ -320,12 +356,12 @@ class TypescriptParsedClassifier(
     name: String,
     parsedClass: KotlinParsedClass? = null,
     override val parsedClassifier: TypescriptParsedClassifier? = null,
-    var customType: TypescriptType?
+    var customType: TypescriptType?,
 ) : ParsedClassifier(
-    name,
-    parsedClass,
-    parsedClassifier
-) {
+        name,
+        parsedClass,
+        parsedClassifier,
+    ) {
     fun asCode(): String {
         val sb = StringBuilder()
         val customType = this.customType

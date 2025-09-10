@@ -16,7 +16,8 @@ import java.math.BigInteger
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
-import java.util.*
+import java.util.Date
+import java.util.UUID
 import kotlin.reflect.KClass
 
 class ClassesConverter(
@@ -25,7 +26,9 @@ class ClassesConverter(
     private val mapDateOption: MapDateOption,
     private val ignoredClasses: Set<String>,
     private val ignoredFieldsByClass: Map<String, Set<String>>,
-    userCustomTypes: List<CustomType>
+    private val generateEnumOptions: Boolean,
+    private val generateEnumObject: Boolean,
+    userCustomTypes: List<CustomType>,
 ) {
     private val customTypes: List<CustomType> = createCustomTypes(userCustomTypes)
     private val customTypesAbsolute: Map<KClass<*>, CustomType> =
@@ -35,39 +38,46 @@ class ClassesConverter(
     fun convert() {
         val alreadyScannedClasses: MutableMap<KClass<*>, KotlinParsedClass> = mutableMapOf()
 
-        parseTypeParameter(classes.map {
-            KotlinParsedClass(it, true, ignoredClasses, ignoredFieldsByClass).also { parsed ->
-                alreadyScannedClasses[parsed.originalClass] = parsed
-            }
-        }, alreadyScannedClasses)
+        parseTypeParameter(
+            classes.map {
+                KotlinParsedClass(it, true, ignoredClasses, ignoredFieldsByClass).also { parsed ->
+                    alreadyScannedClasses[parsed.originalClass] = parsed
+                }
+            },
+            alreadyScannedClasses,
+        )
 
         alreadyScannedClasses.values.forEach {
             it.parseProperties(alreadyScannedClasses.toMutableMap())
         }
 
-        val filesCreated = alreadyScannedClasses.values.filter { it.shouldGenerateNewFile }
-            .map { it.toTypescript(customTypes, customTypesAbsolute, customTypesSubclass) }
-            .map {
-                File(outputDir, it.packagePath).mkdirs()
-                val newFile = File(outputDir, it.fileName + ".ts").also { file -> file.writeText(it.asCode()) }
-                newFile.absolutePath
-            }
+        val filesCreated =
+            alreadyScannedClasses.values
+                .filter { it.shouldGenerateNewFile }
+                .map { it.toTypescript(customTypes, customTypesAbsolute, customTypesSubclass, generateEnumOptions, generateEnumObject) }
+                .map {
+                    File(outputDir, it.packagePath).mkdirs()
+                    val newFile = File(outputDir, it.fileName + ".ts").also { file -> file.writeText(it.asCode()) }
+                    newFile.absolutePath
+                }
 
         groupFilesByDirectory(filesCreated).entries.parallelStream().forEach {
-            File(it.key, "index.ts").writeText(it.value.joinToString(separator = lineSeparator) {
-                "export * from './${
-                    it.replace(
-                        ".ts",
-                        ""
-                    )
-                }'"
-            } + lineSeparator)
+            File(it.key, "index.ts").writeText(
+                it.value.joinToString(separator = lineSeparator) {
+                    "export * from './${
+                        it.replace(
+                            ".ts",
+                            "",
+                        )
+                    }'"
+                } + lineSeparator,
+            )
         }
     }
 
     private fun parseTypeParameter(
         parsedClasses: List<KotlinParsedClass>,
-        alreadyScannedClasses: MutableMap<KClass<*>, KotlinParsedClass>
+        alreadyScannedClasses: MutableMap<KClass<*>, KotlinParsedClass>,
     ) {
         parsedClasses.forEach {
             val newParsed = it.parseTypeParameter(alreadyScannedClasses).toMutableList()
@@ -102,28 +112,34 @@ class ClassesConverter(
         return customTypes
     }
 
-    private fun insertTypeIfNotFound(customTypes: MutableList<CustomType>, kotlinType: KotlinType, typescriptType: TypescriptType) {
+    private fun insertTypeIfNotFound(
+        customTypes: MutableList<CustomType>,
+        kotlinType: KotlinType,
+        typescriptType: TypescriptType,
+    ) {
         if (customTypes.find { it.kotlin == kotlinType } == null) {
             customTypes.add(
                 CustomType(
                     kotlinType,
-                    typescriptType
-                )
+                    typescriptType,
+                ),
             )
         }
     }
 
     private fun createCustomTypesForDates(customTypes: MutableList<CustomType>) {
-        val typescriptType = when (mapDateOption) {
-            MapDateOption.AS_DATE -> AbsoluteTypescriptType(name = "Date")
-            MapDateOption.AS_STRING -> AbsoluteTypescriptType(name = "string")
-            MapDateOption.AS_NUMBER -> AbsoluteTypescriptType(name = "number")
-            MapDateOption.AS_MOMENT -> AbsoluteTypescriptType(name = "moment.Moment", "import moment from 'moment';")
-            MapDateOption.AS_LUXON -> AbsoluteTypescriptType(
-                name = "DateTime",
-                "import { DateTime } from 'luxon';"
-            )
-        }
+        val typescriptType =
+            when (mapDateOption) {
+                MapDateOption.AS_DATE -> AbsoluteTypescriptType(name = "Date")
+                MapDateOption.AS_STRING -> AbsoluteTypescriptType(name = "string")
+                MapDateOption.AS_NUMBER -> AbsoluteTypescriptType(name = "number")
+                MapDateOption.AS_MOMENT -> AbsoluteTypescriptType(name = "moment.Moment", "import moment from 'moment';")
+                MapDateOption.AS_LUXON ->
+                    AbsoluteTypescriptType(
+                        name = "DateTime",
+                        "import { DateTime } from 'luxon';",
+                    )
+            }
 
         insertTypeIfNotFound(customTypes, AbsoluteKotlinType(LocalDate::class), typescriptType)
         insertTypeIfNotFound(customTypes, AbsoluteKotlinType(LocalDateTime::class), typescriptType)

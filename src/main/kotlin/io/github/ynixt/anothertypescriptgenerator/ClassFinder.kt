@@ -10,15 +10,16 @@ class ClassFinder(
     private val classPathUrls: List<URL>,
 ) {
     fun findClasses(): List<KClass<*>> {
-        val scanResult = ClassGraph()
-            .overrideClasspath(classPathUrls)
-            .verbose()
-            .enableClassInfo()
-            .acceptClasses(*classPackages.toTypedArray())
-            .acceptPackages(*classPackages.toTypedArray())
-            .rejectPackages(*excludeClassPackages.toTypedArray())
-            .ignoreClassVisibility()
-            .scan()
+        val scanResult =
+            ClassGraph()
+                .overrideClasspath(classPathUrls)
+                .verbose()
+                .enableClassInfo()
+                .acceptClasses(*classPackages.toTypedArray())
+                .acceptPackages(*classPackages.toTypedArray())
+                .rejectPackages(*excludeClassPackages.toTypedArray())
+                .ignoreClassVisibility()
+                .scan()
 
         val allClasses = scanResult.allClasses.filter { !it.name.endsWith("\$Companion") && !it.isSynthetic }
 

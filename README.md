@@ -44,11 +44,11 @@ export interface Company extends DatabaseEntity {
 
 ## Installing
 
-Add `id("io.github.ynixt.another-typescript-generator") version "1.1.0"` at plugins section
+Add `id("io.github.ynixt.another-typescript-generator") version "1.2.0"` at plugins section
 
 ```kotlin
 plugins {
-    id("io.github.ynixt.another-typescript-generator") version "1.1.0"
+    id("io.github.ynixt.another-typescript-generator") version "1.2.0"
 }
 ```
 
@@ -182,3 +182,123 @@ Add or replace the mapping between Typescript and Kotlin.
 )
 ``` 
 
+### generateEnumOptions
+
+Defines whether the enum should also generate an array containing all its options.
+
+**Note:** default value is `true`.
+
+#### Example
+
+##### True
+
+```kotlin
+generateEnumOptions = true
+``` 
+
+for enum
+
+```kotlin
+enum class GroupPermissions {
+    CHANGE_ROLE,
+    ADD_MEMBER,
+    REMOVE_MEMBER,
+
+    SEND_ENTRIES,
+}
+```
+
+generates
+
+```typescript
+export type GroupPermissions = 'CHANGE_ROLE' | 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'SEND_ENTRIES';
+
+export const GroupPermissions__Options: GroupPermissions[] = ['CHANGE_ROLE', 'ADD_MEMBER', 'REMOVE_MEMBER', 'SEND_ENTRIES'];
+```
+
+##### False
+
+```kotlin
+generateEnumOptions = false
+``` 
+
+for enum
+
+```kotlin
+enum class GroupPermissions {
+    CHANGE_ROLE,
+    ADD_MEMBER,
+    REMOVE_MEMBER,
+
+    SEND_ENTRIES,
+}
+```
+
+generates
+
+```typescript
+export type GroupPermissions = 'CHANGE_ROLE' | 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'SEND_ENTRIES';
+```
+
+### generateEnumObject
+
+Defines whether the enum should also generate an object containing all its options.
+
+**Note:** default value is `false`.
+
+#### Example
+
+##### True
+
+```kotlin
+generateEnumObject = true
+``` 
+
+for enum
+
+```kotlin
+enum class GroupPermissions {
+    CHANGE_ROLE,
+    ADD_MEMBER,
+    REMOVE_MEMBER,
+
+    SEND_ENTRIES,
+}
+```
+
+generates
+
+```typescript
+export type GroupPermissions = 'CHANGE_ROLE' | 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'SEND_ENTRIES';
+
+export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions } = {
+    'CHANGE_ROLE': 'CHANGE_ROLE',
+    'ADD_MEMBER': 'ADD_MEMBER',
+    'REMOVE_MEMBER': 'REMOVE_MEMBER',
+    'SEND_ENTRIES': 'SEND_ENTRIES',
+};
+```
+
+##### False
+
+```kotlin
+generateEnumObject = false
+``` 
+
+for enum
+
+```kotlin
+enum class GroupPermissions {
+    CHANGE_ROLE,
+    ADD_MEMBER,
+    REMOVE_MEMBER,
+
+    SEND_ENTRIES,
+}
+```
+
+generates
+
+```typescript
+export type GroupPermissions = 'CHANGE_ROLE' | 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'SEND_ENTRIES';
+```

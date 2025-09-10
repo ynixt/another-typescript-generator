@@ -1,6 +1,5 @@
 package io.github.ynixt.anothertypescriptgenerator
 
-import io.github.classgraph.ClassGraph
 import io.github.ynixt.anothertypescriptgenerator.generator.ClassesConverter
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
@@ -10,21 +9,21 @@ import java.net.URL
 import java.net.URLClassLoader
 import kotlin.reflect.KClass
 
-
 enum class MapDateOption {
     AS_DATE,
     AS_STRING,
     AS_MOMENT,
     AS_LUXON,
-    AS_NUMBER
+    AS_NUMBER,
 }
 
 data class CustomType(
     val kotlin: KotlinType,
-    val typescript: TypescriptType
+    val typescript: TypescriptType,
 )
 
 abstract class KotlinType
+
 abstract class KotlinTypeWithClass : KotlinType() {
     abstract val kClass: KClass<*>
 }
@@ -34,19 +33,19 @@ abstract class KotlinTypeWithString : KotlinType() {
 }
 
 data class AbsoluteKotlinType(
-    override val kClass: KClass<*>
+    override val kClass: KClass<*>,
 ) : KotlinTypeWithClass()
 
 data class AbsoluteKotlinTypeString(
-    override val qualifiedName: String
+    override val qualifiedName: String,
 ) : KotlinTypeWithString()
 
 data class SubclassKotlinType(
-    override val kClass: KClass<*>
+    override val kClass: KClass<*>,
 ) : KotlinTypeWithClass()
 
 data class SubclassKotlinTypeString(
-    override val qualifiedName: String
+    override val qualifiedName: String,
 ) : KotlinTypeWithString()
 
 abstract class TypescriptType {
@@ -66,12 +65,13 @@ data class AbsoluteArrayTypescriptType(
     override val ignoreGenerics: Boolean = false,
 ) : TypescriptType()
 
-class GenericObjectTypescriptType(override val ignoreGenerics: Boolean = false) : TypescriptType() {
+class GenericObjectTypescriptType(
+    override val ignoreGenerics: Boolean = false,
+) : TypescriptType() {
     override val import: String? = null
 }
 
 open class GenerateTypescriptInterfacesTask : DefaultTask() {
-
     @Input
     val outputPath = project.objects.property(String::class.java)
 
@@ -101,6 +101,12 @@ open class GenerateTypescriptInterfacesTask : DefaultTask() {
 
     @Input
     val ignoredFieldsByClass = project.objects.mapProperty(String::class.java, Set::class.java as Class<Set<String>>)
+
+    @Input
+    val generateEnumOptions = project.objects.property(Boolean::class.java)
+
+    @Input
+    val generateEnumObject = project.objects.property(Boolean::class.java)
 
     @TaskAction
     fun generate() {
@@ -134,11 +140,12 @@ open class GenerateTypescriptInterfacesTask : DefaultTask() {
             classLoader = URLClassLoader(urls.toTypedArray(), Thread.currentThread().getContextClassLoader())
             Thread.currentThread().setContextClassLoader(classLoader)
 
-            val classes = ClassFinder(
-                classPackages = classPackages.get(),
-                excludeClassPackages = excludeClassPackages.get(),
-                classPathUrls = classLoader.urLs.toList(),
-            ).findClasses()
+            val classes =
+                ClassFinder(
+                    classPackages = classPackages.get(),
+                    excludeClassPackages = excludeClassPackages.get(),
+                    classPathUrls = classLoader.urLs.toList(),
+                ).findClasses()
 
             ClassesConverter(
                 classes = classes.toSet(),
@@ -147,6 +154,8 @@ open class GenerateTypescriptInterfacesTask : DefaultTask() {
                 mapDateOption = mapDate.get(),
                 ignoredClasses = ignoredClasses.get(),
                 ignoredFieldsByClass = ignoredFieldsByClass.get(),
+                generateEnumOptions = generateEnumOptions.get(),
+                generateEnumObject = generateEnumObject.get(),
             ).convert()
         } finally {
             classLoader?.close()
@@ -156,40 +165,42 @@ open class GenerateTypescriptInterfacesTask : DefaultTask() {
     private fun loadClassOfStringCustomTypes(
         customTypes: List<CustomType>,
         classes: List<KClass<*>>,
-        classLoader: URLClassLoader
+        classLoader: URLClassLoader,
     ): List<CustomType> {
         val classByQualifiedName = classes.associateBy { it.qualifiedName }
 
         return customTypes.mapNotNull {
-            val customKotlin: KotlinType? = if (it.kotlin is KotlinTypeWithString) {
-                var ktClass = classByQualifiedName[it.kotlin.qualifiedName]
+            val customKotlin: KotlinType? =
+                if (it.kotlin is KotlinTypeWithString) {
+                    var ktClass = classByQualifiedName[it.kotlin.qualifiedName]
 
-                if (ktClass == null) {
-                    ktClass = ClassFinder(
-                        classPackages = listOf(it.kotlin.qualifiedName),
-                        excludeClassPackages = listOf(),
-                        classPathUrls = classLoader.urLs.toList(),
-                    ).findClasses().find { c -> c.qualifiedName == it.kotlin.qualifiedName }
-                }
+                    if (ktClass == null) {
+                        ktClass =
+                            ClassFinder(
+                                classPackages = listOf(it.kotlin.qualifiedName),
+                                excludeClassPackages = listOf(),
+                                classPathUrls = classLoader.urLs.toList(),
+                            ).findClasses().find { c -> c.qualifiedName == it.kotlin.qualifiedName }
+                    }
 
-                if (ktClass != null) {
-                    when (it.kotlin) {
-                        is AbsoluteKotlinTypeString -> AbsoluteKotlinType(ktClass)
-                        is SubclassKotlinTypeString -> SubclassKotlinType(ktClass)
-                        else -> null
+                    if (ktClass != null) {
+                        when (it.kotlin) {
+                            is AbsoluteKotlinTypeString -> AbsoluteKotlinType(ktClass)
+                            is SubclassKotlinTypeString -> SubclassKotlinType(ktClass)
+                            else -> null
+                        }
+                    } else {
+                        println("${it.kotlin.qualifiedName} was not found.")
+
+                        null
                     }
                 } else {
-                    println("${it.kotlin.qualifiedName} was not found.")
-
-                    null
+                    it.kotlin
                 }
-            } else {
-                it.kotlin
-            }
 
             if (customKotlin != null) {
                 it.copy(
-                    kotlin = customKotlin
+                    kotlin = customKotlin,
                 )
             } else {
                 null
@@ -210,7 +221,10 @@ open class GenerateTypescriptInterfacesTask : DefaultTask() {
         }
     }
 
-    private fun resolvePath(basePath: String, path: String): File {
+    private fun resolvePath(
+        basePath: String,
+        path: String,
+    ): File {
         val file = File(path)
         return if (file.isAbsolute) {
             file

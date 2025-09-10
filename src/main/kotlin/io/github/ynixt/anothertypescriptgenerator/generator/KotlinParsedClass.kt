@@ -1,7 +1,7 @@
 package io.github.ynixt.anothertypescriptgenerator.generator
 
 import io.github.ynixt.anothertypescriptgenerator.CustomType
-import java.util.*
+import java.util.Locale
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KType
@@ -25,27 +25,23 @@ class KotlinParsedClass(
     var typeParameters: List<ParsedTypeParameter>? = null
     var properties: List<ParsedProperty>? = null
 
-    fun getNameForFile(): String {
-        return className.replace(Regex("([a-z])([A-Z]+)"), "$1-$2")
+    fun getNameForFile(): String =
+        className
+            .replace(Regex("([a-z])([A-Z]+)"), "$1-$2")
             .lowercase(Locale.getDefault())
-    }
 
-    fun getPackagePath(): String {
-        return classPackage.replace(".", "/")
-    }
+    fun getPackagePath(): String = classPackage.replace(".", "/")
 
-    fun getFileName(): String {
-        return getPackagePath() + "/" + getNameForFile()
-    }
-
+    fun getFileName(): String = getPackagePath() + "/" + getNameForFile()
 
     fun parseSupertypes(alreadyScannedClasses: MutableMap<KClass<*>, KotlinParsedClass>): List<KotlinParsedClass> {
         val newClassesToParse = mutableListOf<KotlinParsedClass>()
 
         if (originalClass.supertypes.isNotEmpty()) {
-            this.supertypes = originalClass.supertypes.mapNotNull {
-                parseType(it, alreadyScannedClasses, newClassesToParse)
-            }
+            this.supertypes =
+                originalClass.supertypes.mapNotNull {
+                    parseType(it, alreadyScannedClasses, newClassesToParse)
+                }
         }
 
         return newClassesToParse
@@ -55,16 +51,22 @@ class KotlinParsedClass(
         val newClassesToParse = mutableListOf<KotlinParsedClass>()
 
         if (originalClass.typeParameters.isNotEmpty()) {
-            this.typeParameters = originalClass.typeParameters.map {
-                val bounds = if (it.upperBounds.isEmpty()) null else it.upperBounds.mapNotNull { bound ->
-                    parseClassifier(bound.classifier, alreadyScannedClasses, newClassesToParse)
-                }
+            this.typeParameters =
+                originalClass.typeParameters.map {
+                    val bounds =
+                        if (it.upperBounds.isEmpty()) {
+                            null
+                        } else {
+                            it.upperBounds.mapNotNull { bound ->
+                                parseClassifier(bound.classifier, alreadyScannedClasses, newClassesToParse)
+                            }
+                        }
 
-                ParsedTypeParameter(
-                    name = it.name,
-                    bounds = bounds
-                )
-            }
+                    ParsedTypeParameter(
+                        name = it.name,
+                        bounds = bounds,
+                    )
+                }
         }
 
         return newClassesToParse
@@ -74,54 +76,60 @@ class KotlinParsedClass(
         val publicProperties =
             originalClass.memberProperties.filter {
                 it.visibility == KVisibility.PUBLIC &&
-                        ignoredFieldsByClass[originalClass.qualifiedName]?.contains(
-                            it.name
-                        ) != true
+                    ignoredFieldsByClass[originalClass.qualifiedName]?.contains(
+                        it.name,
+                    ) != true
             }
 
-        properties = publicProperties.mapNotNull {
-            val parsedType = parseType(it.returnType, alreadyScannedClasses, null)
+        properties =
+            publicProperties.mapNotNull {
+                val parsedType = parseType(it.returnType, alreadyScannedClasses, null)
 
-            if (parsedType != null) {
-                ParsedProperty(
-                    it.name,
-                    parsedType
-                )
-            } else {
-                null
+                if (parsedType != null) {
+                    ParsedProperty(
+                        it.name,
+                        parsedType,
+                    )
+                } else {
+                    null
+                }
             }
-        }
     }
 
     fun toTypescript(
         customTypes: List<CustomType>,
         customTypesAbsolute: Map<KClass<*>, CustomType>,
         customTypesSubclass: List<CustomType>,
-    ): TypescriptParsedClass {
-        return TypescriptParsedClass(this, customTypes, customTypesAbsolute, customTypesSubclass)
-    }
+        generateEnumOptions: Boolean,
+        generateEnumObject: Boolean,
+    ): TypescriptParsedClass =
+        TypescriptParsedClass(this, customTypes, customTypesAbsolute, customTypesSubclass, generateEnumOptions, generateEnumObject)
 
     private fun parseType(
         kType: KType,
         alreadyScannedClasses: MutableMap<KClass<*>, KotlinParsedClass>,
-        newClassesToParse: MutableList<KotlinParsedClass>?
+        newClassesToParse: MutableList<KotlinParsedClass>?,
     ): ParsedType? {
         val parsedClassifier = parseClassifier(kType.classifier, alreadyScannedClasses, newClassesToParse)
 
         if (parsedClassifier != null) {
             val argumentsTypes =
                 kType.arguments.mapNotNull { argument ->
-                    if (argument.type == null) null else parseType(
-                        argument.type!!,
-                        alreadyScannedClasses,
-                        newClassesToParse
-                    )
+                    if (argument.type == null) {
+                        null
+                    } else {
+                        parseType(
+                            argument.type!!,
+                            alreadyScannedClasses,
+                            newClassesToParse,
+                        )
+                    }
                 }
 
             return ParsedType(
                 nullable = kType.isMarkedNullable,
                 classifier = parsedClassifier,
-                argumentsTypes = argumentsTypes
+                argumentsTypes = argumentsTypes,
             )
         }
         return null
@@ -130,9 +138,9 @@ class KotlinParsedClass(
     private fun parseClassifier(
         classifier: KClassifier?,
         alreadyScannedClasses: MutableMap<KClass<*>, KotlinParsedClass>,
-        newClassesToParse: MutableList<KotlinParsedClass>?
-    ): ParsedClassifier? {
-        return when (classifier) {
+        newClassesToParse: MutableList<KotlinParsedClass>?,
+    ): ParsedClassifier? =
+        when (classifier) {
             is KClass<*> -> {
                 if (classifier.simpleName == "Serializable" || classifier.simpleName == "Enum") {
                     null
@@ -143,7 +151,7 @@ class KotlinParsedClass(
                                 classifier,
                                 newClassesToParse != null && classifier.simpleName != "Any",
                                 ignoredClasses,
-                                ignoredFieldsByClass
+                                ignoredFieldsByClass,
                             )
                         alreadyScannedClasses[classifier] = newClass
 
@@ -161,12 +169,11 @@ class KotlinParsedClass(
 
             else -> null
         }
-    }
 }
 
 open class ParsedTypeParameter(
     val name: String,
-    open val bounds: List<ParsedClassifier>?
+    open val bounds: List<ParsedClassifier>?,
 )
 
 open class ParsedClassifier(
@@ -177,12 +184,11 @@ open class ParsedClassifier(
 
 open class ParsedProperty(
     val name: String,
-    open val returnType: ParsedType
+    open val returnType: ParsedType,
 )
 
 open class ParsedType(
     val nullable: Boolean,
     open val classifier: ParsedClassifier,
-    open val argumentsTypes: List<ParsedType>? = null
+    open val argumentsTypes: List<ParsedType>? = null,
 )
-
